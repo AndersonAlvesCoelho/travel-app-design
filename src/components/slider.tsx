@@ -1,89 +1,56 @@
 "use client"
 import { useSlider } from "@/context/SliderContext";
-import { MouseEvent, TouchEvent, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 
 export default function Slider() {
 
-  const { sliderData, handleSlideControlle
-  } = useSlider()
+  const { sliderData } = useSlider()
 
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [direction, setDirection] = useState<"right" | "left" | null>(null);
-  const sliderRef = useRef<HTMLDivElement>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [startX, setStartX] = useState<number | null>(null);
 
-  const handleMouseDown = (event: MouseEvent<HTMLDivElement>) => {
-    setIsDragging(true);
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      if (startX !== null && carouselRef.current) {
+        const currentX = event.clientX;
+        const diffX = currentX - startX;
+
+        // Verificar se o movimento excedeu 200 pixels para a direita ou para a esquerda
+        if (diffX > 200) {
+          console.log('Arrastou para a direita');
+        } else if (diffX < -200) {
+          console.log('Arrastou para a esquerda');
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      setStartX(null);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [startX]);
+
+  const handleMouseDown = (event: React.MouseEvent) => {
     setStartX(event.clientX);
   };
 
-  const handleMouseMove = (event: MouseEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-
-    const slider = sliderRef.current;
-    if (!slider) return;
-
-    const currentX = event.clientX;
-    const translateX = currentX - startX;
-
-    slider.style.transform = `translateX(${translateX}px)`;
-  };
-
-  const handleSlideController = (event: MouseEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-
-    const currentX = event.clientX;
-    const deltaX = currentX - startX;
-
-    if (deltaX > 0) {
-      handleSlideController(1)
-    } else if (deltaX < 0) {
-      handleSlideController(2)
-    } else {
-      setDirection(null);
-    }
-
-    setIsDragging(false);
-  };
-
-  const handleTouchStart = (event: TouchEvent<HTMLDivElement>) => {
-    setIsDragging(true);
-    setStartX(event.touches[0].clientX);
-  };
-
-  const handleTouchMove = (event: TouchEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-
-    const slider = sliderRef.current;
-    if (!slider) return;
-
-    const currentX = event.touches[0].clientX;
-    const translateX = currentX - startX;
-
-    slider.style.transform = `translateX(${translateX}px)`;
-  };
-
-  const handleTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-
-    const currentX = event.changedTouches[0].clientX;
-    const deltaX = currentX - startX;
-
-    if (deltaX > 0) {
-      setDirection("right");
-    } else if (deltaX < 0) {
-      setDirection("left");
-    } else {
-      setDirection(null);
-    }
-
-    setIsDragging(false);
-  };
-
   return (
-    <section className="flex flex-col">
+    <section
+      ref={carouselRef}
+      className="flex flex-col"
+      onMouseDown={handleMouseDown}
+      style={{ scrollSnapType: 'x mandatory' }}
+    >
 
+   
       <div className="flex justify-evenly items-end gap-8 px-8">
         {sliderData.map((item, index) => (
           <>
@@ -104,13 +71,7 @@ export default function Slider() {
 
       <button
         type="button"
-        className="flex items-center"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        className="flex items-center  cursor-[url('/images/circle.svg'),_pointer]"
       >
         <h1 className="text-5xl text-zinc-50 font-bold mr-4">{sliderData[0].index}</h1>
 
